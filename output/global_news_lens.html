@@ -251,7 +251,7 @@ let networkInitialized = false;
 /* ══════════════════════════════════════════════
    UTILITY
 ══════════════════════════════════════════════ */
-function fmtPct(v)  { return (v * 100).toFixed(0) + '%'; }
+function fmtPct(v)  { return (v * 100).toFixed(1) + '%'; }
 function fmtNum(v)  { return v?.toLocaleString() ?? '—'; }
 function fmtDate(s) {
   s = String(s);
@@ -601,15 +601,15 @@ function initNetwork() {
 
   const n = pids.length;
   const cx = W / 2, cy = H / 2;
-  const rx = W * 0.37, ry = H * 0.34;
+  // Use a circle (not ellipse) so arc length between nodes is equal regardless of position
+  const ringR = Math.min(W * 0.36, H * 0.36);
+  const NODE_R = 22; // fixed radius for all nodes
 
   const nodes = pids.map((pid, i) => {
     const angle = (2 * Math.PI * i / n) - Math.PI / 2;
     const g = DATA.parent_topics[String(pid)];
     const pct = g.genre_global_pct ?? 0;
-    // Size: base 14, up to 32 based on global share (log scaled)
-    const r = 14 + 18 * Math.log1p(pct * 100) / Math.log1p(100);
-    return { pid, label: g.genre_label, x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle), r, pct, color: genreColor(pid) };
+    return { pid, label: g.genre_label, x: cx + ringR * Math.cos(angle), y: cy + ringR * Math.sin(angle), r: NODE_R, pct, color: genreColor(pid) };
   });
 
   const g = svg.append('g');
@@ -628,14 +628,14 @@ function initNetwork() {
     .attr('transform', d => `translate(${d.x},${d.y})`)
     .style('cursor', 'pointer')
     .on('mouseenter', function(event, d) {
-      d3.select(this).select('.node-outer').transition().duration(120).attr('r', d.r * 1.18);
-      ntip.textContent = `${d.label}  ${fmtPct(d.pct)} global`;
+      d3.select(this).transition().duration(120).attr('transform', `translate(${d.x},${d.y}) scale(1.15)`);
+      ntip.textContent = `${d.label}  ·  ${fmtPct(d.pct)} of global coverage`;
       ntip.style.opacity = '1';
       ntip.style.left = (event.clientX + 12) + 'px';
       ntip.style.top  = (event.clientY - 8)  + 'px';
     })
     .on('mouseleave', function(event, d) {
-      d3.select(this).select('.node-outer').transition().duration(120).attr('r', d.r);
+      d3.select(this).transition().duration(120).attr('transform', `translate(${d.x},${d.y}) scale(1)`);
       ntip.style.opacity = '0';
     })
     .on('click', (event, d) => renderGenreDetail(d.pid));
