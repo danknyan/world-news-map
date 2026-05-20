@@ -4,18 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Global News Lens</title>
-
-<!-- Leaflet for map -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- D3 for network -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
-<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
-
 <style>
-/* ── RESET & BASE ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -26,21 +20,18 @@
   --paper-warm: #ede9e1;
   --paper-mid:  #ddd8ce;
   --rule:       #c8c2b8;
-  --gray-country: #b0a99e;
-  --highlight-stroke: #1a1814;
-  --panel-bg:   #f0ece4;
+  --gray-country: #7a9aaa;
   --detail-bg:  #faf8f3;
-  --header-h:   44px;
+  --header-h:   48px;
   --serif: 'Source Serif 4', Georgia, serif;
   --display: 'Playfair Display', Georgia, serif;
   --mono: 'IBM Plex Mono', monospace;
-  --radius: 3px;
   --transition: 0.18s ease;
 }
 
-html, body { height: 100%; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--serif); }
+html, body { height: 100%; overflow: hidden; background: var(--paper); color: var(--ink); font-family: var(--serif); font-size: 15px; }
 
-/* ── HEADER ───────────────────────────────────────────────── */
+/* ── HEADER ── */
 #header {
   height: var(--header-h);
   background: var(--ink);
@@ -48,412 +39,161 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
   display: flex;
   align-items: center;
   padding: 0 20px;
-  gap: 24px;
-  border-bottom: 1px solid #333;
-  position: relative;
+  gap: 20px;
   z-index: 1000;
   flex-shrink: 0;
 }
-#header-title {
-  font-family: var(--display);
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
+#header-title { font-family: var(--display); font-size: 17px; font-weight: 700; white-space: nowrap; }
 #header-divider { width: 1px; height: 18px; background: #555; }
-#header-date {
+#header-date { font-family: var(--mono); font-size: 12px; color: #aaa; letter-spacing: 0.05em; }
+#header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+#header-count { font-family: var(--mono); font-size: 12px; color: #888; }
+
+/* Date selector in header */
+#date-selector-wrap { display: flex; align-items: center; gap: 8px; }
+#date-selector-wrap label { font-family: var(--mono); font-size: 10px; color: #888; letter-spacing: 0.08em; text-transform: uppercase; }
+#date-selector {
   font-family: var(--mono);
   font-size: 11px;
-  color: #aaa;
-  letter-spacing: 0.05em;
+  background: #2a2824;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 2px;
+  padding: 3px 7px;
+  cursor: pointer;
+  outline: none;
 }
-#header-count {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: #888;
-  margin-left: auto;
-  letter-spacing: 0.03em;
-}
+#date-selector:hover { border-color: #666; }
 
-/* ── LAYOUT ───────────────────────────────────────────────── */
-#app {
-  display: flex;
-  height: calc(100vh - var(--header-h));
-}
+/* ── LAYOUT ── */
+#app { display: flex; height: calc(100vh - var(--header-h)); }
+#left-col { flex: 0 0 66%; display: flex; flex-direction: column; border-right: 1px solid var(--rule); overflow: hidden; }
+#right-col { flex: 1 1 34%; display: flex; flex-direction: column; background: var(--detail-bg); overflow: hidden; }
 
-#left-col {
-  flex: 0 0 66%;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--rule);
-  overflow: hidden;
-}
-
-#right-col {
-  flex: 1 1 34%;
-  display: flex;
-  flex-direction: column;
-  background: var(--detail-bg);
-  overflow: hidden;
-}
-
-/* ── MAP PANEL ────────────────────────────────────────────── */
-#map-panel {
-  flex: 0 0 55%;
-  position: relative;
-  border-bottom: 1px solid var(--rule);
-  background: #c8dce8;
-}
+/* ── MAP ── */
+#map-panel { flex: 0 0 55%; position: relative; border-bottom: 1px solid var(--rule); background: #c8dce8; }
 #map { width: 100%; height: 100%; }
+#map-label { position: absolute; top: 10px; left: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); text-transform: uppercase; z-index: 400; pointer-events: none; }
 
-/* Map panel label */
-#map-label {
-  position: absolute;
-  top: 10px; left: 12px;
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  z-index: 400;
-  pointer-events: none;
-}
-
-/* Legend */
-#map-legend {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: rgba(245,242,236,0.92);
-  border: 1px solid var(--rule);
-  padding: 8px 10px;
-  font-family: var(--mono);
-  font-size: 9px;
-  z-index: 400;
-  max-width: 200px;
-}
-#map-legend-title { color: var(--ink-muted); letter-spacing: 0.1em; margin-bottom: 6px; text-transform: uppercase; }
-.legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; cursor: pointer; }
+#map-legend { position: absolute; bottom: 10px; left: 10px; background: rgba(245,242,236,0.94); border: 1px solid var(--rule); padding: 8px 10px; font-family: var(--mono); font-size: 10px; z-index: 400; max-width: 210px; max-height: 55%; overflow-y: auto; }
+#map-legend-title { color: var(--ink-muted); letter-spacing: 0.1em; margin-bottom: 6px; text-transform: uppercase; font-size: 9px; }
+.legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; cursor: pointer; }
 .legend-item:hover .legend-label { color: var(--ink); }
-.legend-swatch { width: 10px; height: 10px; flex-shrink: 0; border-radius: 1px; }
-.legend-label { color: var(--ink-mid); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.legend-swatch { width: 11px; height: 11px; flex-shrink: 0; border-radius: 1px; }
+.legend-label { color: var(--ink-mid); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
 
 /* Tooltip */
-#map-tooltip {
-  position: fixed;
-  background: var(--ink);
-  color: var(--paper);
-  padding: 7px 10px;
-  font-family: var(--mono);
-  font-size: 10px;
-  line-height: 1.5;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.1s;
-  z-index: 2000;
-  max-width: 220px;
-  border-left: 3px solid transparent;
-}
+#map-tooltip { position: fixed; background: var(--ink); color: var(--paper); padding: 8px 11px; font-family: var(--mono); font-size: 11px; line-height: 1.5; pointer-events: none; opacity: 0; transition: opacity 0.1s; z-index: 2000; max-width: 240px; border-left: 3px solid transparent; }
 #map-tooltip.visible { opacity: 1; }
-#tt-country { font-weight: 500; letter-spacing: 0.03em; }
+#tt-country { font-weight: 500; letter-spacing: 0.03em; font-size: 12px; }
 #tt-genre { color: #ccc; }
-#tt-count { color: #888; font-size: 9px; margin-top: 1px; }
+#tt-count { color: #888; font-size: 10px; margin-top: 1px; }
 
-/* ── NETWORK PANEL ────────────────────────────────────────── */
-#network-panel {
-  flex: 1 1 45%;
-  position: relative;
-  background: var(--paper-warm);
-  overflow: hidden;
-}
-#network-label {
-  position: absolute;
-  top: 10px; left: 12px;
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: var(--ink-muted);
-  text-transform: uppercase;
-  z-index: 10;
-  pointer-events: none;
-}
+/* ── NETWORK PANEL ── */
+#network-panel { flex: 1 1 45%; position: relative; background: var(--paper-warm); overflow: hidden; }
+#network-label { position: absolute; top: 10px; left: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--ink-muted); text-transform: uppercase; z-index: 10; pointer-events: none; }
 #network-svg { width: 100%; height: 100%; }
 
-/* ── DETAIL PANEL ─────────────────────────────────────────── */
-#detail-panel {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 20px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule) transparent;
-}
+/* ── DETAIL PANEL ── */
+#detail-panel { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px; scrollbar-width: thin; scrollbar-color: var(--rule) transparent; }
 #detail-panel::-webkit-scrollbar { width: 4px; }
 #detail-panel::-webkit-scrollbar-thumb { background: var(--rule); }
 
-/* Welcome state */
-#welcome {
-  padding: 32px 0 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-#welcome-logo {
-  font-family: var(--display);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--ink);
-  line-height: 1.1;
-}
-#welcome-date {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink-muted);
-  letter-spacing: 0.08em;
-}
-#welcome-count {
-  font-family: var(--display);
-  font-size: 32px;
-  font-weight: 400;
-  color: var(--ink);
-  line-height: 1;
-}
-#welcome-count-label {
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--ink-muted);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-.welcome-rule { height: 1px; background: var(--rule); margin: 4px 0; }
-#welcome-instruction {
-  font-size: 12px;
-  color: var(--ink-muted);
-  line-height: 1.65;
-  font-style: italic;
-}
+/* Welcome */
+#welcome { padding: 28px 0 0; display: flex; flex-direction: column; gap: 16px; }
+#welcome-logo { font-family: var(--display); font-size: 24px; font-weight: 700; line-height: 1.1; }
+#welcome-date { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); letter-spacing: 0.08em; }
+#welcome-count { font-family: var(--display); font-size: 34px; font-weight: 400; line-height: 1; }
+#welcome-count-label { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 3px; }
+.welcome-rule { height: 1px; background: var(--rule); margin: 2px 0; }
+#welcome-instruction { font-size: 13px; color: var(--ink-muted); line-height: 1.7; font-style: italic; }
 
 /* Section labels */
-.detail-section-label {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  margin-bottom: 8px;
-  margin-top: 18px;
-}
+.detail-section-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: 10px; margin-top: 20px; }
 .detail-section-label:first-child { margin-top: 0; }
 
-/* Country detail */
-#country-header { margin-bottom: 16px; }
-#country-flag-name {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 4px;
-}
-#country-flag { font-size: 28px; line-height: 1; }
-#country-name { font-family: var(--display); font-size: 22px; font-weight: 700; line-height: 1.1; }
-#country-meta {
-  font-family: var(--mono);
-  font-size: 14px;
-  color: var(--ink-muted);
-  display: flex;
-  gap: 14px;
-  margin-top: 6px;
-}
+/* Country detail header */
+#country-header { margin-bottom: 18px; }
+#country-flag-name { display: flex; align-items: baseline; gap: 10px; margin-bottom: 5px; }
+#country-flag { font-size: 30px; line-height: 1; }
+#country-name { font-family: var(--display); font-size: 24px; font-weight: 700; line-height: 1.1; }
+#country-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); display: flex; gap: 16px; margin-top: 7px; flex-wrap: wrap; }
 .country-meta-item span { color: var(--ink); font-weight: 500; }
 
 /* Genre pills */
-#genre-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 14px;
-}
+#genre-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
 .genre-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px 5px 8px;
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  cursor: pointer;
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  transition: background var(--transition), color var(--transition);
-  color: var(--ink-mid);
-  background: transparent;
-  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px 6px 9px;
+  border: 1.5px solid currentColor; border-radius: 2px;
+  cursor: pointer; font-family: var(--mono); font-size: 11px;
+  letter-spacing: 0.02em; transition: background var(--transition), color var(--transition);
+  color: var(--ink-mid); background: transparent;
 }
-.genre-pill::before {
-  content: '';
-  display: block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--pill-color);
-  flex-shrink: 0;
-}
-.genre-pill.active {
-  background: var(--pill-color);
-  border-color: var(--pill-color);
-  color: white;
-}
+.genre-pill::before { content: ''; display: block; width: 9px; height: 9px; border-radius: 50%; background: var(--pill-color); flex-shrink: 0; }
+.genre-pill.active { background: var(--pill-color); border-color: var(--pill-color); color: white; }
 .genre-pill.active::before { background: white; }
 .genre-pill:hover:not(.active) { background: rgba(0,0,0,0.04); }
-.pill-label { font-size: 9.5px; }
-.pill-pct { opacity: 0.75; }
 
 /* Subtopic list */
 #subtopic-list { display: flex; flex-direction: column; }
-.subtopic-row {
-  border-top: 1px solid var(--rule);
-  cursor: pointer;
-}
+.subtopic-row { border-top: 1px solid var(--rule); cursor: pointer; }
 .subtopic-row:last-child { border-bottom: 1px solid var(--rule); }
-.subtopic-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: 9px 2px;
-  gap: 8px;
-}
+.subtopic-header { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 3px; gap: 10px; }
 .subtopic-header:hover { background: rgba(0,0,0,0.02); }
-.subtopic-label { font-size: 13px; color: var(--ink); line-height: 1.3; }
-.subtopic-pct {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.subtopic-articles {
-  display: none;
-  padding: 0 2px 10px;
-  flex-direction: column;
-  gap: 8px;
-}
-.subtopic-articles.open { display: flex; }
-.article-item {}
-.article-link {
-  display: block;
-  font-size: 12.5px;
-  color: var(--ink);
-  text-decoration: none;
-  line-height: 1.45;
-  border-bottom: 1px solid transparent;
-  transition: border-color var(--transition);
-}
-.article-link:hover { border-bottom-color: var(--ink-mid); }
-.article-source {
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--ink-muted);
-  margin-top: 2px;
-  letter-spacing: 0.04em;
-}
-.expand-icon {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink-muted);
-  margin-left: 6px;
-  transition: transform var(--transition);
-  display: inline-block;
-}
+.subtopic-label { font-size: 14px; color: var(--ink); line-height: 1.35; }
+.subtopic-pct { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); white-space: nowrap; flex-shrink: 0; }
+.expand-icon { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); margin-left: 5px; transition: transform var(--transition); display: inline-block; }
 .subtopic-row.expanded .expand-icon { transform: rotate(90deg); }
+.subtopic-articles { display: none; padding: 0 3px 12px; flex-direction: column; gap: 10px; }
+.subtopic-articles.open { display: flex; }
+.article-link { display: block; font-size: 13px; color: var(--ink); text-decoration: none; line-height: 1.5; border-bottom: 1px solid transparent; transition: border-color var(--transition); }
+.article-link:hover { border-bottom-color: var(--ink-mid); }
+.article-source { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); margin-top: 2px; letter-spacing: 0.04em; }
 
-/* Genre detail (network click) */
-#genre-detail-header { margin-bottom: 12px; }
-#genre-detail-label { font-family: var(--display); font-size: 20px; font-weight: 700; margin-bottom: 10px; }
-.word-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-.word-chip {
-  font-family: var(--mono);
-  font-size: 9px;
-  padding: 3px 7px;
-  background: var(--paper-mid);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  color: var(--ink-muted);
-  letter-spacing: 0.03em;
-}
+/* Genre / child detail */
+#genre-detail-label { font-family: var(--display); font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+#genre-global-pct { font-family: var(--mono); font-size: 12px; color: var(--ink-muted); margin-bottom: 2px; }
+#child-detail-parent { font-family: var(--mono); font-size: 10px; color: var(--ink-muted); letter-spacing: 0.08em; margin-bottom: 8px; text-transform: uppercase; }
 
-/* Country list (genre detail) */
+/* Country list (genre/child detail) */
 .country-list { display: flex; flex-direction: column; }
-.country-list-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 4px;
-  border-top: 1px solid var(--rule);
-  cursor: pointer;
-  transition: background var(--transition);
-}
+.country-list-row { display: flex; align-items: center; gap: 9px; padding: 8px 4px; border-top: 1px solid var(--rule); cursor: pointer; transition: background var(--transition); }
 .country-list-row:last-child { border-bottom: 1px solid var(--rule); }
 .country-list-row:hover { background: rgba(0,0,0,0.03); }
-.cl-flag { font-size: 16px; flex-shrink: 0; }
-.cl-name { font-size: 13px; flex: 1; }
-.cl-pct {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ink-muted);
-  white-space: nowrap;
-}
-.cl-bar {
-  width: 40px;
-  height: 3px;
-  background: var(--rule);
-  border-radius: 2px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.cl-bar-fill {
-  height: 100%;
-  border-radius: 2px;
-  background: var(--bar-color, var(--ink-muted));
-}
+.cl-flag { font-size: 17px; flex-shrink: 0; }
+.cl-name { font-size: 14px; flex: 1; }
+.cl-pct { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
+.cl-bar { width: 44px; height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.cl-bar-fill { height: 100%; border-radius: 2px; background: var(--bar-color, var(--ink-muted)); }
 
-/* Child topic detail */
-#child-detail-parent { font-family: var(--mono); font-size: 9px; color: var(--ink-muted); letter-spacing: 0.08em; margin-bottom: 6px; text-transform: uppercase; }
-
-/* Divider */
-.h-rule { height: 1px; background: var(--rule); margin: 14px 0; }
-
-/* Transition */
+.h-rule { height: 1px; background: var(--rule); margin: 16px 0; }
 #detail-panel > * { animation: fadeIn 0.15s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Leaflet overrides */
-.leaflet-container { font-family: var(--serif); }
-.leaflet-control-zoom { border: 1px solid var(--rule) !important; border-radius: var(--radius) !important; }
-.leaflet-control-zoom a { background: var(--paper) !important; color: var(--ink) !important; font-family: var(--mono) !important; }
-.leaflet-control-attribution { font-family: var(--mono) !important; font-size: 8px !important; opacity: 0.5; }
+.leaflet-control-zoom { border: 1px solid var(--rule) !important; border-radius: 2px !important; }
+.leaflet-control-zoom a { background: var(--paper) !important; color: var(--ink) !important; }
+.leaflet-control-attribution { font-family: var(--mono) !important; font-size: 8px !important; opacity: 0.4; }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <div id="header">
   <div id="header-title">Global News Lens</div>
   <div id="header-divider"></div>
-  <div id="header-date" id="hdate">—</div>
-  <div id="header-count">—</div>
+  <div id="header-date">—</div>
+  <div id="header-right">
+    <div id="date-selector-wrap" style="display:none">
+      <label>Date</label>
+      <select id="date-selector"></select>
+    </div>
+    <div id="header-count">—</div>
+  </div>
 </div>
 
-<!-- APP -->
 <div id="app">
-  <!-- LEFT COLUMN -->
   <div id="left-col">
-    <!-- MAP -->
     <div id="map-panel">
       <div id="map-label">World Map · Dominant Genre</div>
       <div id="map"></div>
@@ -462,22 +202,16 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
         <div id="legend-items"></div>
       </div>
     </div>
-    <!-- NETWORK -->
     <div id="network-panel">
       <div id="network-label">Topic Network · Parent Genres</div>
       <svg id="network-svg"></svg>
     </div>
   </div>
-
-  <!-- RIGHT COLUMN: DETAIL PANEL -->
   <div id="right-col">
-    <div id="detail-panel">
-      <!-- content injected by JS -->
-    </div>
+    <div id="detail-panel"></div>
   </div>
 </div>
 
-<!-- TOOLTIP -->
 <div id="map-tooltip">
   <div id="tt-country"></div>
   <div id="tt-genre"></div>
@@ -485,87 +219,85 @@ html, body { height: 100%; overflow: hidden; background: var(--paper); color: va
 </div>
 
 <script>
-/* ════════════════════════════════════════════════════════════
-   CONFIGURATION — edit these paths to match your output folder
-   ════════════════════════════════════════════════════════════ */
-const DATA_PATH = './20260512_ui_payload.json';
+/* ══════════════════════════════════════════════
+   CONFIG
+══════════════════════════════════════════════ */
+const MANIFEST_PATH = './available_dates.json';
 
-/* ────────────────────────────────────────────────────────────
-   FIXED GENRE PALETTE  (parent_topic_id → hex)
-   20 hand-curated muted tones suitable for large map areas.
-   Replace entries once you know your actual parent_topic_ids.
-   ──────────────────────────────────────────────────────────── */
+/* ── Fixed genre palette (parent_topic_id → hex) ── */
 const GENRE_PALETTE = {
-  0:  '#4e79a7',  // slate blue
-  1:  '#b07d62',  // terracotta
-  2:  '#59a14f',  // sage green
-  3:  '#e05c5c',  // muted red
-  4:  '#7b6da8',  // dusty violet
-  5:  '#d4a03a',  // warm amber
-  6:  '#4aabab',  // teal
-  7:  '#c4773b',  // rust
-  8:  '#a0b954',  // olive
-  9:  '#c46ba8',  // mauve
-  10: '#3d7dbf',  // steel blue
-  11: '#bf5a5a',  // brick
-  12: '#5aad86',  // sea green
-  13: '#7a6e3e',  // khaki
-  14: '#5a82a8',  // dusty blue
-  15: '#c4894a',  // burnt orange
-  16: '#6bab6b',  // fern
-  17: '#ab6b8a',  // rose
-  18: '#4a8a8a',  // dark teal
-  19: '#a87a4a',  // caramel
+  0:  '#4e79a7', 1:  '#b07d62', 2:  '#59a14f', 3:  '#c94040',
+  4:  '#7b6da8', 5:  '#d4a03a', 6:  '#3aabab', 7:  '#c4773b',
+  8:  '#8fa832', 9:  '#c46ba8', 10: '#2e6fbf', 11: '#bf5050',
+  12: '#4aad86', 13: '#7a6e3e', 14: '#5a82a8', 15: '#c8893a',
+  16: '#5aab5a', 17: '#ab6b8a', 18: '#3a8a8a', 19: '#a87a4a',
 };
-
-const GRAY_COUNTRY = '#b0a99e';
+const GRAY_COUNTRY = '#7a9aaa'; /* cool blue-gray — distinct from all warm genre hues */
 
 function genreColor(pid) {
-  if (pid == null || pid === undefined) return GRAY_COUNTRY;
-  return GENRE_PALETTE[pid] ?? GRAY_COUNTRY;
+  if (pid == null) return GRAY_COUNTRY;
+  return GENRE_PALETTE[+pid] ?? GRAY_COUNTRY;
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════
    STATE
-   ════════════════════════════════════════════════════════════ */
-let DATA = null;          // full payload
+══════════════════════════════════════════════ */
+let DATA = null;
+let ALL_PAYLOADS = {};       // date string → payload object
 let selectedCountryId = null;
-let highlightedLayer = null;
-let countryLayers = {};   // alpha3 → leaflet layer
+let countryLayers = {};
+let networkInitialized = false;
 
-/* ════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════
    UTILITY
-   ════════════════════════════════════════════════════════════ */
-function fmtPct(v) { return (v * 100).toFixed(0) + '%'; }
-function fmtNum(v) { return v?.toLocaleString() ?? '—'; }
+══════════════════════════════════════════════ */
+function fmtPct(v)  { return (v * 100).toFixed(0) + '%'; }
+function fmtNum(v)  { return v?.toLocaleString() ?? '—'; }
 function fmtDate(s) {
-  if (!s || s.length < 8) return s;
-  const y = s.slice(0,4), m = s.slice(4,6), d = s.slice(6,8);
-  const dt = new Date(`${y}-${m}-${d}`);
+  s = String(s);
+  if (s.length < 8) return s;
+  const dt = new Date(`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`);
   return dt.toLocaleDateString('en-GB', { day:'numeric', month:'long', year:'numeric' });
 }
 
-// Country code → flag emoji
-function flagEmoji(code) {
-  if (!code || code.length !== 2) return '🌐';
-  return [...code.toUpperCase()].map(c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))).join('');
+const ALPHA3_TO_2 = {"AFG":"AF","ALB":"AL","DZA":"DZ","AND":"AD","AGO":"AO","ATG":"AG","ARG":"AR","ARM":"AM","AUS":"AU","AUT":"AT","AZE":"AZ","BHS":"BS","BHR":"BH","BGD":"BD","BRB":"BB","BLR":"BY","BEL":"BE","BLZ":"BZ","BEN":"BJ","BTN":"BT","BOL":"BO","BIH":"BA","BWA":"BW","BRA":"BR","BRN":"BN","BGR":"BG","BFA":"BF","BDI":"BI","CPV":"CV","KHM":"KH","CMR":"CM","CAN":"CA","CAF":"CF","TCD":"TD","CHL":"CL","CHN":"CN","COL":"CO","COM":"KM","COD":"CD","COG":"CG","CRI":"CR","CIV":"CI","HRV":"HR","CUB":"CU","CYP":"CY","CZE":"CZ","DNK":"DK","DJI":"DJ","DOM":"DO","ECU":"EC","EGY":"EG","SLV":"SV","GNQ":"GQ","ERI":"ER","EST":"EE","SWZ":"SZ","ETH":"ET","FJI":"FJ","FIN":"FI","FRA":"FR","GAB":"GA","GMB":"GM","GEO":"GE","DEU":"DE","GHA":"GH","GRC":"GR","GRD":"GD","GTM":"GT","GIN":"GN","GNB":"GW","GUY":"GY","HTI":"HT","HND":"HN","HUN":"HU","ISL":"IS","IND":"IN","IDN":"ID","IRN":"IR","IRQ":"IQ","IRL":"IE","ISR":"IL","ITA":"IT","JAM":"JM","JPN":"JP","JOR":"JO","KAZ":"KZ","KEN":"KE","KIR":"KI","PRK":"KP","KOR":"KR","KWT":"KW","KGZ":"KG","LAO":"LA","LVA":"LV","LBN":"LB","LSO":"LS","LBR":"LR","LBY":"LY","LIE":"LI","LTU":"LT","LUX":"LU","MDG":"MG","MWI":"MW","MYS":"MY","MDV":"MV","MLI":"ML","MLT":"MT","MHL":"MH","MRT":"MR","MUS":"MU","MEX":"MX","FSM":"FM","MDA":"MD","MCO":"MC","MNG":"MN","MNE":"ME","MAR":"MA","MOZ":"MZ","MMR":"MM","NAM":"NA","NRU":"NR","NPL":"NP","NLD":"NL","NZL":"NZ","NIC":"NI","NER":"NE","NGA":"NG","MKD":"MK","NOR":"NO","OMN":"OM","PAK":"PK","PLW":"PW","PAN":"PA","PNG":"PG","PRY":"PY","PER":"PE","PHL":"PH","POL":"PL","PRT":"PT","QAT":"QA","ROU":"RO","RUS":"RU","RWA":"RW","KNA":"KN","LCA":"LC","VCT":"VC","WSM":"WS","SMR":"SM","STP":"ST","SAU":"SA","SEN":"SN","SRB":"RS","SLE":"SL","SGP":"SG","SVK":"SK","SVN":"SI","SLB":"SB","SOM":"SO","ZAF":"ZA","SSD":"SS","ESP":"ES","LKA":"LK","SDN":"SD","SUR":"SR","SWE":"SE","CHE":"CH","SYR":"SY","TWN":"TW","TJK":"TJ","TZA":"TZ","THA":"TH","TLS":"TL","TGO":"TG","TON":"TO","TTO":"TT","TUN":"TN","TUR":"TR","TKM":"TM","TUV":"TV","UGA":"UG","UKR":"UA","ARE":"AE","GBR":"GB","USA":"US","URY":"UY","UZB":"UZ","VUT":"VU","VEN":"VE","VNM":"VN","YEM":"YE","ZMB":"ZM","ZWE":"ZW","PSE":"PS","XKX":"XK","KOS":"XK"};
+
+function flagEmoji(code2) {
+  if (!code2 || code2.length !== 2) return '🌐';
+  return [...code2.toUpperCase()].map(c => String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0))).join('');
 }
-
-// Try to get 2-letter code for flag from feature id (alpha3) via simple lookup
-const ALPHA3_TO_2 = {"AFG":"AF","ALB":"AL","DZA":"DZ","AND":"AD","AGO":"AO","ATG":"AG","ARG":"AR","ARM":"AM","AUS":"AU","AUT":"AT","AZE":"AZ","BHS":"BS","BHR":"BH","BGD":"BD","BRB":"BB","BLR":"BY","BEL":"BE","BLZ":"BZ","BEN":"BJ","BTN":"BT","BOL":"BO","BIH":"BA","BWA":"BW","BRA":"BR","BRN":"BN","BGR":"BG","BFA":"BF","BDI":"BI","CPV":"CV","KHM":"KH","CMR":"CM","CAN":"CA","CAF":"CF","TCD":"TD","CHL":"CL","CHN":"CN","COL":"CO","COM":"KM","COD":"CD","COG":"CG","CRI":"CR","CIV":"CI","HRV":"HR","CUB":"CU","CYP":"CY","CZE":"CZ","DNK":"DK","DJI":"DJ","DOM":"DO","ECU":"EC","EGY":"EG","SLV":"SV","GNQ":"GQ","ERI":"ER","EST":"EE","SWZ":"SZ","ETH":"ET","FJI":"FJ","FIN":"FI","FRA":"FR","GAB":"GA","GMB":"GM","GEO":"GE","DEU":"DE","GHA":"GH","GRC":"GR","GRD":"GD","GTM":"GT","GIN":"GN","GNB":"GW","GUY":"GY","HTI":"HT","HND":"HN","HUN":"HU","ISL":"IS","IND":"IN","IDN":"ID","IRN":"IR","IRQ":"IQ","IRL":"IE","ISR":"IL","ITA":"IT","JAM":"JM","JPN":"JP","JOR":"JO","KAZ":"KZ","KEN":"KE","KIR":"KI","PRK":"KP","KOR":"KR","KWT":"KW","KGZ":"KG","LAO":"LA","LVA":"LV","LBN":"LB","LSO":"LS","LBR":"LR","LBY":"LY","LIE":"LI","LTU":"LT","LUX":"LU","MDG":"MG","MWI":"MW","MYS":"MY","MDV":"MV","MLI":"ML","MLT":"MT","MHL":"MH","MRT":"MR","MUS":"MU","MEX":"MX","FSM":"FM","MDA":"MD","MCO":"MC","MNG":"MN","MNE":"ME","MAR":"MA","MOZ":"MZ","MMR":"MM","NAM":"NA","NRU":"NR","NPL":"NP","NLD":"NL","NZL":"NZ","NIC":"NI","NER":"NE","NGA":"NG","MKD":"MK","NOR":"NO","OMN":"OM","PAK":"PK","PLW":"PW","PAN":"PA","PNG":"PG","PRY":"PY","PER":"PE","PHL":"PH","POL":"PL","PRT":"PT","QAT":"QA","ROU":"RO","RUS":"RU","RWA":"RW","KNA":"KN","LCA":"LC","VCT":"VC","WSM":"WS","SMR":"SM","STP":"ST","SAU":"SA","SEN":"SN","SRB":"RS","SLE":"SL","SGP":"SG","SVK":"SK","SVN":"SI","SLB":"SB","SOM":"SO","ZAF":"ZA","SSD":"SS","ESP":"ES","LKA":"LK","SDN":"SD","SUR":"SR","SWE":"SE","CHE":"CH","SYR":"SY","TWN":"TW","TJK":"TJ","TZA":"TZ","THA":"TH","TLS":"TL","TGO":"TG","TON":"TO","TTO":"TT","TUN":"TN","TUR":"TR","TKM":"TM","TUV":"TV","UGA":"UG","UKR":"UA","ARE":"AE","GBR":"GB","USA":"US","URY":"UY","UZB":"UZ","VUT":"VU","VEN":"VE","VNM":"VN","YEM":"YE","ZMB":"ZM","ZWE":"ZW","PSE":"PS","XKX":"XK","SOM":"SO","KOS":"XK"};
-
-function getFlag(featureId) {
-  const a2 = ALPHA3_TO_2[featureId?.toUpperCase()];
+function getFlag(alpha3) {
+  const a2 = ALPHA3_TO_2[(alpha3 || '').toUpperCase()];
   return a2 ? flagEmoji(a2) : '🌐';
 }
 
-/* ════════════════════════════════════════════════════════════
-   DETAIL PANEL RENDERING
-   ════════════════════════════════════════════════════════════ */
+/* Build index: parent_topic_id → all countries with articles in that genre */
+function buildGenreCountryIndex() {
+  const idx = {}; // pid → [{featureId, name, flag, genre_pct}]
+  DATA.geojson.features.forEach(f => {
+    (f.properties.genres || []).forEach(g => {
+      const pid = String(g.parent_topic_id);
+      if (!idx[pid]) idx[pid] = [];
+      idx[pid].push({
+        featureId: f.id,
+        name: f.properties.name || f.id,
+        flag: getFlag(f.id),
+        genre_pct: g.genre_pct,
+        genre_article_count: g.genre_article_count,
+      });
+    });
+  });
+  // Sort each list by genre_pct descending
+  Object.values(idx).forEach(arr => arr.sort((a,b) => b.genre_pct - a.genre_pct));
+  return idx;
+}
+
+/* ══════════════════════════════════════════════
+   DETAIL PANEL
+══════════════════════════════════════════════ */
 const dp = document.getElementById('detail-panel');
 
 function renderWelcome() {
-  if (!DATA) return;
   dp.innerHTML = `
     <div id="welcome">
       <div id="welcome-logo">Global<br>News Lens</div>
@@ -576,23 +308,20 @@ function renderWelcome() {
         <div id="welcome-count-label">Articles Indexed</div>
       </div>
       <div class="welcome-rule"></div>
-      <div id="welcome-instruction">
-        Click any country on the map to explore what topics dominate its news coverage. Click a genre node in the topic network below to see the global view of that theme.
-      </div>
+      <div id="welcome-instruction">Click any country on the map to explore what topics dominate its news coverage. Click a genre node in the topic network to see the global view of that theme.</div>
     </div>`;
 }
 
-/* ── COUNTRY DETAIL ───────────────────────────────────────── */
+/* ── Country Detail ── */
 function renderCountryDetail(featureId, preselectGenreId) {
   const feature = DATA.geojson.features.find(f => f.id === featureId);
   if (!feature) return;
   const props = feature.properties;
   const genres = props.genres || [];
   if (!genres.length) {
-    dp.innerHTML = `<div style="padding-top:24px;color:var(--ink-muted);font-style:italic;font-size:13px;">No genre data available for this country.</div>`;
+    dp.innerHTML = `<div style="padding-top:24px;color:var(--ink-muted);font-style:italic;font-size:14px;">No genre data available for this country.</div>`;
     return;
   }
-
   const flag = getFlag(featureId);
   const name = props.name || featureId;
   const total = props.country_total_articles;
@@ -615,17 +344,18 @@ function renderCountryDetail(featureId, preselectGenreId) {
     <div id="genre-pills"></div>
     <div id="subtopic-list"></div>`;
 
-  // Build pills
   const pillsEl = document.getElementById('genre-pills');
   genres.forEach((g, i) => {
     const color = genreColor(g.parent_topic_id);
+    const active = i === defaultIdx;
     const pill = document.createElement('div');
-    pill.className = 'genre-pill' + (i === defaultIdx ? ' active' : '');
+    pill.className = 'genre-pill' + (active ? ' active' : '');
     pill.style.setProperty('--pill-color', color);
     pill.style.borderColor = color;
-    pill.style.color = i === defaultIdx ? 'white' : color;
+    pill.style.color = active ? 'white' : color;
+    pill.style.background = active ? color : 'transparent';
     pill.dataset.idx = i;
-    pill.innerHTML = `<span class="pill-label">${g.genre_label}</span><span class="pill-pct"> · ${fmtPct(g.genre_pct)}</span>`;
+    pill.innerHTML = `${g.genre_label} <span style="opacity:0.8">· ${fmtPct(g.genre_pct)}</span>`;
     pill.addEventListener('click', () => selectGenrePill(genres, i));
     pillsEl.appendChild(pill);
   });
@@ -635,11 +365,9 @@ function renderCountryDetail(featureId, preselectGenreId) {
 
 function selectGenrePill(genres, idx) {
   document.querySelectorAll('.genre-pill').forEach((p, i) => {
-    const g = genres[i];
-    const color = genreColor(g.parent_topic_id);
+    const color = genreColor(genres[i].parent_topic_id);
     const active = i === idx;
     p.classList.toggle('active', active);
-    p.style.setProperty('--pill-color', color);
     p.style.borderColor = color;
     p.style.color = active ? 'white' : color;
     p.style.background = active ? color : 'transparent';
@@ -653,11 +381,10 @@ function renderSubtopics(genre) {
   const subtopics = genre.subtopics || [];
   el.innerHTML = '';
   if (!subtopics.length) {
-    el.innerHTML = `<div style="color:var(--ink-muted);font-size:12px;font-style:italic;padding:8px 0;">No sub-topics available.</div>`;
+    el.innerHTML = `<div style="color:var(--ink-muted);font-size:13px;font-style:italic;padding:10px 0;">No sub-topics available.</div>`;
     return;
   }
-
-  subtopics.forEach((st, i) => {
+  subtopics.forEach(st => {
     const row = document.createElement('div');
     row.className = 'subtopic-row';
     row.innerHTML = `
@@ -666,13 +393,10 @@ function renderSubtopics(genre) {
         <span class="subtopic-pct">${fmtPct(st.subtopic_pct)}</span>
       </div>
       <div class="subtopic-articles"></div>`;
-
     const header = row.querySelector('.subtopic-header');
     const articlesEl = row.querySelector('.subtopic-articles');
-
     header.addEventListener('click', () => {
       const isOpen = row.classList.contains('expanded');
-      // Close all
       document.querySelectorAll('.subtopic-row.expanded').forEach(r => {
         r.classList.remove('expanded');
         r.querySelector('.subtopic-articles').classList.remove('open');
@@ -680,109 +404,47 @@ function renderSubtopics(genre) {
       if (!isOpen) {
         row.classList.add('expanded');
         articlesEl.classList.add('open');
-        // Lazy-render articles
         if (!articlesEl.dataset.rendered) {
           articlesEl.dataset.rendered = '1';
           (st.articles || []).forEach(a => {
             const item = document.createElement('div');
-            item.className = 'article-item';
             item.innerHTML = `<a class="article-link" href="${a.url}" target="_blank" rel="noopener">${a.title}</a><div class="article-source">${a.source}</div>`;
             articlesEl.appendChild(item);
           });
           if (!(st.articles?.length)) {
-            articlesEl.innerHTML = `<div style="color:var(--ink-muted);font-size:12px;font-style:italic;">No articles available.</div>`;
+            articlesEl.innerHTML = `<div style="color:var(--ink-muted);font-size:13px;font-style:italic;">No articles available.</div>`;
           }
         }
       }
     });
-
     el.appendChild(row);
   });
 }
 
-/* ── GENRE DETAIL (network node click) ───────────────────── */
+/* ── Genre Detail (network node click) ── */
+let genreCountryIndex = null;
+
 function renderGenreDetail(parentId) {
   const pid = String(parentId);
   const genre = DATA.parent_topics[pid];
   if (!genre) return;
+  if (!genreCountryIndex) genreCountryIndex = buildGenreCountryIndex();
   const color = genreColor(parentId);
-  const countries = (genre.dominant_countries || []).filter(c => (c.country || c.country_code));
+  const countries = genreCountryIndex[pid] || [];
+  const globalPct = genre.genre_global_pct ?? null;
 
   dp.innerHTML = `
-    <div id="genre-detail-header">
-      <div style="font-family:var(--mono);font-size:9px;color:var(--ink-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Genre Overview</div>
+    <div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--ink-muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;">Genre Overview</div>
       <div id="genre-detail-label" style="color:${color}">${genre.genre_label}</div>
+      ${globalPct != null ? `<div id="genre-global-pct">${fmtPct(globalPct)} of global coverage</div>` : ''}
     </div>
     <div class="h-rule"></div>
-    <div class="detail-section-label">Dominant In</div>
-    ${countries.length ? '' : '<div style="color:var(--ink-muted);font-size:16px;font-style:italic;padding:8px 0;">Not dominant in any country on this date.</div>'}
+    <div class="detail-section-label">Countries Covering This Genre</div>
+    ${countries.length ? '' : '<div style="color:var(--ink-muted);font-size:13px;font-style:italic;padding:6px 0;">No countries found for this genre on this date.</div>'}
     <div class="country-list" id="genre-country-list"></div>`;
 
   const listEl = document.getElementById('genre-country-list');
-  countries.forEach(c => {
-    const featureId = (c.country || c.country_code || '').toUpperCase();
-    const feature = DATA.geojson.features.find(f => f.id?.toUpperCase() === featureId);
-    const name = feature?.properties?.name || featureId;
-    const flag = getFlag(featureId);
-    const pct = c.genre_pct ?? 0;
-
-    const row = document.createElement('div');
-    row.className = 'country-list-row';
-    row.style.setProperty('--bar-color', color);
-    row.innerHTML = `
-      <span class="cl-flag">${flag}</span>
-      <span class="cl-name">${name}</span>
-      <div class="cl-bar"><div class="cl-bar-fill" style="width:${Math.round(pct*100)}%"></div></div>
-      <span class="cl-pct">${fmtPct(pct)}</span>`;
-    row.addEventListener('click', () => {
-      highlightCountry(featureId);
-      renderCountryDetail(featureId, parentId);
-    });
-    listEl.appendChild(row);
-  });
-}
-
-/* ── CHILD TOPIC DETAIL ───────────────────────────────────── */
-function renderChildDetail(childId) {
-  const cid = String(childId);
-  const child = DATA.child_topics[cid];
-  if (!child) return;
-  const parent = DATA.parent_topics[String(child.parent_topic_id)];
-  const color = genreColor(child.parent_topic_id);
-  const words = child.word_list || [];
-
-  // Gather countries where this child/grandchild appears
-  const countries = [];
-  DATA.geojson.features.forEach(f => {
-    const genres = f.properties?.genres || [];
-    genres.forEach(g => {
-      (g.subtopics || []).forEach(st => {
-        if (String(st.topic_id) === cid || (child.grandchild_ids || []).includes(st.topic_id)) {
-          countries.push({
-            featureId: f.id,
-            name: f.properties.name,
-            flag: getFlag(f.id),
-            subtopic_pct: st.subtopic_pct,
-          });
-        }
-      });
-    });
-  });
-
-  dp.innerHTML = `
-    <div id="child-detail-parent" style="color:${color}">${parent?.genre_label ?? ''}</div>
-    <div class="detail-section-label">Sub-Topic Signal Words</div>
-    <div class="word-chips">${words.map(w=>`<span class="word-chip">${w}</span>`).join('')}</div>
-    <div class="h-rule"></div>
-    <div class="detail-section-label">Active In</div>
-    <div class="country-list" id="child-country-list"></div>`;
-
-  const listEl = document.getElementById('child-country-list');
-  if (!countries.length) {
-    listEl.innerHTML = `<div style="color:var(--ink-muted);font-size:12px;font-style:italic;padding:8px 0;">No country data found for this topic.</div>`;
-    return;
-  }
-  countries.sort((a,b) => b.subtopic_pct - a.subtopic_pct);
   countries.forEach(c => {
     const row = document.createElement('div');
     row.className = 'country-list-row';
@@ -790,128 +452,120 @@ function renderChildDetail(childId) {
     row.innerHTML = `
       <span class="cl-flag">${c.flag}</span>
       <span class="cl-name">${c.name}</span>
-      <span class="cl-pct">${fmtPct(c.subtopic_pct)}</span>`;
+      <div class="cl-bar"><div class="cl-bar-fill" style="width:${Math.min(100,Math.round(c.genre_pct*100))}%"></div></div>
+      <span class="cl-pct">${fmtPct(c.genre_pct)}</span>`;
     row.addEventListener('click', () => {
       highlightCountry(c.featureId);
-      renderCountryDetail(c.featureId, null);
+      renderCountryDetail(c.featureId, parentId);
     });
     listEl.appendChild(row);
   });
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ── Child Topic Detail ── */
+function renderChildDetail(childId) {
+  const cid = String(childId);
+  const child = DATA.child_topics[cid];
+  if (!child) return;
+  const parent = DATA.parent_topics[String(child.parent_topic_id)];
+  const color = genreColor(child.parent_topic_id);
+  const words = child.word_list || [];
+  const countries = [];
+  DATA.geojson.features.forEach(f => {
+    (f.properties.genres || []).forEach(g => {
+      (g.subtopics || []).forEach(st => {
+        if (String(st.topic_id) === cid || (child.grandchild_ids || []).map(String).includes(String(st.topic_id))) {
+          countries.push({ featureId: f.id, name: f.properties.name, flag: getFlag(f.id), subtopic_pct: st.subtopic_pct });
+        }
+      });
+    });
+  });
+  countries.sort((a,b) => b.subtopic_pct - a.subtopic_pct);
+
+  dp.innerHTML = `
+    <div id="child-detail-parent" style="color:${color}">${parent?.genre_label ?? ''}</div>
+    <div class="detail-section-label">Sub-Topic Signal Words</div>
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px;">${words.map(w=>`<span style="font-family:var(--mono);font-size:10px;padding:3px 7px;background:var(--paper-mid);border:1px solid var(--rule);border-radius:2px;color:var(--ink-muted)">${w}</span>`).join('')}</div>
+    <div class="h-rule"></div>
+    <div class="detail-section-label">Active In</div>
+    <div class="country-list" id="child-country-list"></div>`;
+
+  const listEl = document.getElementById('child-country-list');
+  if (!countries.length) {
+    listEl.innerHTML = `<div style="color:var(--ink-muted);font-size:13px;font-style:italic;padding:8px 0;">No country data found.</div>`;
+    return;
+  }
+  countries.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'country-list-row';
+    row.innerHTML = `<span class="cl-flag">${c.flag}</span><span class="cl-name">${c.name}</span><span class="cl-pct">${fmtPct(c.subtopic_pct)}</span>`;
+    row.addEventListener('click', () => { highlightCountry(c.featureId); renderCountryDetail(c.featureId, null); });
+    listEl.appendChild(row);
+  });
+}
+
+/* ══════════════════════════════════════════════
    MAP
-   ════════════════════════════════════════════════════════════ */
+══════════════════════════════════════════════ */
 let map, geoLayer;
 
 function initMap() {
-  map = L.map('map', {
-    center: [20, 10],
-    zoom: 2,
-    minZoom: 1,
-    maxZoom: 6,
-    zoomControl: true,
-    attributionControl: true,
-    worldCopyJump: false,
-  });
-
-  // Subtle tile layer
+  if (map) { map.remove(); map = null; geoLayer = null; countryLayers = {}; selectedCountryId = null; }
+  map = L.map('map', { center: [20, 10], zoom: 2, minZoom: 1, maxZoom: 6, zoomControl: true, attributionControl: true });
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap © CARTO',
-    subdomains: 'abcd',
-    maxZoom: 19,
+    attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19,
   }).addTo(map);
-
-  buildGeoLayer();
+  geoLayer = L.geoJSON(DATA.geojson, { style: styleFeature, onEachFeature: bindFeatureEvents }).addTo(map);
   buildLegend();
-}
-
-function buildGeoLayer() {
-  geoLayer = L.geoJSON(DATA.geojson, {
-    style: styleFeature,
-    onEachFeature: bindFeatureEvents,
-  }).addTo(map);
 }
 
 function styleFeature(feature) {
   const pid = feature.properties?.dominant_parent_topic_id;
-  const color = (pid != null) ? genreColor(pid) : GRAY_COUNTRY;
+  const hasGenres = (feature.properties?.genres?.length ?? 0) > 0;
+  const color = hasGenres ? genreColor(pid) : GRAY_COUNTRY;
   const isSelected = feature.id === selectedCountryId;
-  return {
-    fillColor: color,
-    fillOpacity: 0.75,
-    color: isSelected ? '#1a1814' : '#f5f2ec',
-    weight: isSelected ? 2 : 0.4,
-    opacity: 1,
-  };
+  return { fillColor: color, fillOpacity: 0.78, color: isSelected ? '#1a1814' : '#f5f2ec', weight: isSelected ? 2 : 0.4, opacity: 1 };
 }
 
 function bindFeatureEvents(feature, layer) {
   countryLayers[feature.id] = layer;
-  layer.on({
-    mousemove: onCountryHover,
-    mouseout: onCountryOut,
-    click: onCountryClick,
-  });
+  layer.on({ mousemove: onCountryHover, mouseout: onCountryOut, click: onCountryClick });
 }
 
 const tooltip = document.getElementById('map-tooltip');
-const ttCountry = document.getElementById('tt-country');
-const ttGenre = document.getElementById('tt-genre');
-const ttCount = document.getElementById('tt-count');
-
 function onCountryHover(e) {
   const props = e.target.feature.properties;
   const pid = props.dominant_parent_topic_id;
   const genre = DATA.parent_topics[String(pid)]?.genre_label ?? (pid != null ? `Genre ${pid}` : 'No data');
-  const color = genreColor(pid);
-  ttCountry.textContent = props.name || e.target.feature.id;
-  ttGenre.textContent = genre;
-  ttCount.textContent = props.country_total_articles ? fmtNum(props.country_total_articles) + ' articles' : '';
-  tooltip.style.borderLeftColor = color;
+  tooltip.style.borderLeftColor = genreColor(pid);
+  document.getElementById('tt-country').textContent = props.name || e.target.feature.id;
+  document.getElementById('tt-genre').textContent = genre;
+  document.getElementById('tt-count').textContent = props.country_total_articles ? fmtNum(props.country_total_articles) + ' articles' : '';
   tooltip.classList.add('visible');
   positionTooltip(e.originalEvent);
 }
-
-function onCountryOut() {
-  tooltip.classList.remove('visible');
-}
-
-function onCountryClick(e) {
-  const fid = e.target.feature.id;
-  highlightCountry(fid);
-  renderCountryDetail(fid, null);
-}
-
-document.addEventListener('mousemove', e => {
-  if (tooltip.classList.contains('visible')) positionTooltip(e);
-});
-
+function onCountryOut() { tooltip.classList.remove('visible'); }
+function onCountryClick(e) { const fid = e.target.feature.id; highlightCountry(fid); renderCountryDetail(fid, null); }
+document.addEventListener('mousemove', e => { if (tooltip.classList.contains('visible')) positionTooltip(e); });
 function positionTooltip(e) {
-  const x = e.clientX, y = e.clientY;
   const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
-  const wx = window.innerWidth, wy = window.innerHeight;
-  tooltip.style.left = (x + 14 + tw > wx ? x - tw - 8 : x + 14) + 'px';
-  tooltip.style.top  = (y + 14 + th > wy ? y - th - 8 : y + 14) + 'px';
+  tooltip.style.left = (e.clientX + 14 + tw > window.innerWidth ? e.clientX - tw - 8 : e.clientX + 14) + 'px';
+  tooltip.style.top  = (e.clientY + 14 + th > window.innerHeight ? e.clientY - th - 8 : e.clientY + 14) + 'px';
 }
-
 function highlightCountry(fid) {
-  if (selectedCountryId && countryLayers[selectedCountryId]) {
-    countryLayers[selectedCountryId].setStyle({
-      color: '#f5f2ec', weight: 0.4,
-    });
-  }
+  if (selectedCountryId && countryLayers[selectedCountryId]) countryLayers[selectedCountryId].setStyle({ color: '#f5f2ec', weight: 0.4 });
   selectedCountryId = fid;
-  if (fid && countryLayers[fid]) {
-    countryLayers[fid].setStyle({ color: '#1a1814', weight: 2 });
-    countryLayers[fid].bringToFront();
-  }
+  if (fid && countryLayers[fid]) { countryLayers[fid].setStyle({ color: '#1a1814', weight: 2 }); countryLayers[fid].bringToFront(); }
 }
 
 function buildLegend() {
   const el = document.getElementById('legend-items');
+  el.innerHTML = '';
+  // Only show genres that have at least one country with articles
+  if (!genreCountryIndex) genreCountryIndex = buildGenreCountryIndex();
   const pids = Object.keys(DATA.parent_topics).sort((a,b) => +a - +b);
   pids.forEach(pid => {
+    if (!(genreCountryIndex[pid]?.length)) return; // skip empty genres
     const g = DATA.parent_topics[pid];
     const color = genreColor(+pid);
     const item = document.createElement('div');
@@ -920,7 +574,6 @@ function buildLegend() {
     item.addEventListener('click', () => renderGenreDetail(+pid));
     el.appendChild(item);
   });
-  // Gray entry
   const gray = document.createElement('div');
   gray.className = 'legend-item';
   gray.style.cursor = 'default';
@@ -928,153 +581,218 @@ function buildLegend() {
   el.appendChild(gray);
 }
 
-/* ════════════════════════════════════════════════════════════
-   TOPIC NETWORK  (D3 — fixed hierarchy layout)
-   ════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   TOPIC NETWORK
+══════════════════════════════════════════════ */
 function initNetwork() {
   const container = document.getElementById('network-panel');
+  const svgEl = document.getElementById('network-svg');
+  svgEl.innerHTML = '';
   const svg = d3.select('#network-svg');
-
-  const W = container.clientWidth;
-  const H = container.clientHeight;
+  const W = container.clientWidth, H = container.clientHeight;
   svg.attr('viewBox', `0 0 ${W} ${H}`);
 
-  const pids = Object.keys(DATA.parent_topics).map(Number).sort((a,b)=>a-b);
-  const n = pids.length; // should be ~20
+  if (!genreCountryIndex) genreCountryIndex = buildGenreCountryIndex();
 
-  // Arrange parents in an ellipse
+  // Only render genres that have at least one country with articles
+  const pids = Object.keys(DATA.parent_topics)
+    .map(Number).sort((a,b) => a-b)
+    .filter(pid => (genreCountryIndex[String(pid)]?.length ?? 0) > 0);
+
+  const n = pids.length;
   const cx = W / 2, cy = H / 2;
-  const rx = W * 0.38, ry = H * 0.36;
-
-  // Compute max article volume for sizing
-  const maxVol = Math.max(...pids.map(pid => {
-    const g = DATA.parent_topics[String(pid)];
-    return (g.dominant_countries || []).reduce((s, c) => s + (c.genre_pct || 0), 0);
-  }));
+  const rx = W * 0.37, ry = H * 0.34;
 
   const nodes = pids.map((pid, i) => {
     const angle = (2 * Math.PI * i / n) - Math.PI / 2;
     const g = DATA.parent_topics[String(pid)];
-    const vol = (g.dominant_countries || []).reduce((s,c) => s + (c.genre_pct||0), 0);
-    const r = 10 + 8 * Math.log1p(vol) / Math.log1p(maxVol + 1);
-    return {
-      pid,
-      label: g.genre_label,
-      x: cx + rx * Math.cos(angle),
-      y: cy + ry * Math.sin(angle),
-      r,
-      color: genreColor(pid),
-    };
+    const pct = g.genre_global_pct ?? 0;
+    // Size: base 14, up to 32 based on global share (log scaled)
+    const r = 14 + 18 * Math.log1p(pct * 100) / Math.log1p(100);
+    return { pid, label: g.genre_label, x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle), r, pct, color: genreColor(pid) };
   });
 
   const g = svg.append('g');
 
-  // Draw nodes
-  const nodeG = g.selectAll('.pnode')
-    .data(nodes)
-    .enter().append('g')
+  // Network tooltip
+  let ntip = document.getElementById('ntip');
+  if (!ntip) {
+    ntip = document.createElement('div');
+    ntip.id = 'ntip';
+    ntip.style.cssText = 'position:fixed;background:#1a1814;color:#f5f2ec;padding:5px 9px;font-family:"IBM Plex Mono",monospace;font-size:11px;pointer-events:none;z-index:2000;border-radius:2px;opacity:0;transition:opacity 0.1s;';
+    document.body.appendChild(ntip);
+  }
+
+  const nodeG = g.selectAll('.pnode').data(nodes).enter().append('g')
     .attr('class', 'pnode')
     .attr('transform', d => `translate(${d.x},${d.y})`)
     .style('cursor', 'pointer')
     .on('mouseenter', function(event, d) {
-      d3.select(this).select('circle').transition().duration(120).attr('r', d.r * 1.25);
-      showNetworkTooltip(event, d.label);
+      d3.select(this).select('.node-outer').transition().duration(120).attr('r', d.r * 1.18);
+      ntip.textContent = `${d.label}  ${fmtPct(d.pct)} global`;
+      ntip.style.opacity = '1';
+      ntip.style.left = (event.clientX + 12) + 'px';
+      ntip.style.top  = (event.clientY - 8)  + 'px';
     })
     .on('mouseleave', function(event, d) {
-      d3.select(this).select('circle').transition().duration(120).attr('r', d.r);
-      hideNetworkTooltip();
+      d3.select(this).select('.node-outer').transition().duration(120).attr('r', d.r);
+      ntip.style.opacity = '0';
     })
-    .on('click', (event, d) => {
-      renderGenreDetail(d.pid);
-    });
+    .on('click', (event, d) => renderGenreDetail(d.pid));
 
-  nodeG.append('circle')
+  // Background circle (lighter shade = remainder)
+  nodeG.append('circle').attr('class', 'node-outer')
     .attr('r', d => d.r)
     .attr('fill', d => d.color)
-    .attr('fill-opacity', 0.85)
+    .attr('fill-opacity', 0.22)
     .attr('stroke', d => d.color)
-    .attr('stroke-width', 1.5);
+    .attr('stroke-width', 1.5)
+    .attr('stroke-opacity', 0.5);
 
+  // Pie fill arc (genre_global_pct share)
+  nodeG.each(function(d) {
+    if (d.pct <= 0) return;
+    const angle = d.pct * 2 * Math.PI;
+    const x1 = d.r * Math.sin(angle), y1 = -d.r * Math.cos(angle);
+    const large = angle > Math.PI ? 1 : 0;
+    const pathD = angle >= 2 * Math.PI - 0.001
+      ? `M 0 ${-d.r} A ${d.r} ${d.r} 0 1 1 0.001 ${-d.r} Z`
+      : `M 0 ${-d.r} A ${d.r} ${d.r} 0 ${large} 1 ${x1} ${y1} L 0 0 Z`;
+    d3.select(this).append('path')
+      .attr('d', pathD)
+      .attr('fill', d.color)
+      .attr('fill-opacity', 0.88)
+      .attr('pointer-events', 'none');
+  });
+
+  // Label below node
   nodeG.append('text')
     .attr('text-anchor', 'middle')
-    .attr('dy', d => d.r + 11)
+    .attr('dy', d => d.r + 13)
     .attr('font-family', "'IBM Plex Mono', monospace")
-    .attr('font-size', '8px')
+    .attr('font-size', '10px')
     .attr('fill', '#4a4540')
     .attr('pointer-events', 'none')
     .each(function(d) {
-      // Wrap label
       const words = d.label.split(' ');
-      const line1 = words.slice(0, Math.ceil(words.length/2)).join(' ');
-      const line2 = words.slice(Math.ceil(words.length/2)).join(' ');
+      const half = Math.ceil(words.length / 2);
+      const line1 = words.slice(0, half).join(' ');
+      const line2 = words.slice(half).join(' ');
       if (line2) {
-        d3.select(this).append('tspan').attr('x',0).text(line1);
-        d3.select(this).append('tspan').attr('x',0).attr('dy','1.1em').text(line2);
+        d3.select(this).append('tspan').attr('x', 0).text(line1);
+        d3.select(this).append('tspan').attr('x', 0).attr('dy', '1.15em').text(line2);
       } else {
         d3.select(this).text(d.label);
       }
     });
 
-  // Network tooltip (simple)
-  let ntip = null;
-  function showNetworkTooltip(event, label) {
-    if (!ntip) {
-      ntip = document.createElement('div');
-      ntip.style.cssText = 'position:fixed;background:#1a1814;color:#f5f2ec;padding:5px 8px;font-family:var(--mono);font-size:10px;pointer-events:none;z-index:2000;border-radius:2px;';
-      document.body.appendChild(ntip);
-    }
-    ntip.textContent = label;
-    ntip.style.opacity = '1';
-    ntip.style.left = (event.clientX + 12) + 'px';
-    ntip.style.top  = (event.clientY - 8)  + 'px';
-  }
-  function hideNetworkTooltip() {
-    if (ntip) ntip.style.opacity = '0';
-  }
-
   // Central label
-  g.append('text')
-    .attr('x', cx).attr('y', cy)
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .attr('font-family', "'Playfair Display', serif")
-    .attr('font-size', '11px')
-    .attr('fill', '#8a8278')
-    .attr('pointer-events', 'none')
-    .text('20 genres');
+  g.append('text').attr('x', cx).attr('y', cy)
+    .attr('text-anchor', 'middle').attr('dominant-baseline', 'middle')
+    .attr('font-family', "'Playfair Display', serif").attr('font-size', '13px')
+    .attr('fill', '#8a8278').attr('pointer-events', 'none')
+    .text(`${n} genres`);
 }
 
-/* ════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════
+   DATE SELECTOR
+══════════════════════════════════════════════ */
+async function loadDate(dateStr) {
+  if (ALL_PAYLOADS[dateStr]) {
+    DATA = ALL_PAYLOADS[dateStr];
+  } else {
+    const manifest = window._MANIFEST || [];
+    const entry = manifest.find(e => e.date === dateStr);
+    if (!entry) return;
+    const resp = await fetch(entry.file.startsWith('./') ? entry.file : './' + entry.file);
+    DATA = await resp.json();
+    ALL_PAYLOADS[dateStr] = DATA;
+  }
+  genreCountryIndex = null; // reset index for new date
+  document.getElementById('header-date').textContent = fmtDate(DATA.date);
+  document.getElementById('header-count').textContent = fmtNum(DATA.total_articles) + ' articles';
+  initMap();
+  initNetwork();
+  renderWelcome();
+}
+
+/* ══════════════════════════════════════════════
    BOOT
-   ════════════════════════════════════════════════════════════ */
+══════════════════════════════════════════════ */
 /* __INLINE_DATA_PLACEHOLDER__ */
 const _INLINE_DATA = null;
 
 async function boot() {
+  let manifest = [];
+
   if (_INLINE_DATA !== null) {
+    // Standalone mode: data is baked in
     DATA = _INLINE_DATA;
+    ALL_PAYLOADS[DATA.date] = DATA;
+    manifest = [{ date: DATA.date, file: '', total_articles: DATA.total_articles }];
   } else {
+    // Server mode: load manifest then first date
     try {
-      const resp = await fetch(DATA_PATH);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      DATA = await resp.json();
-    } catch(e) {
-      document.getElementById('detail-panel').innerHTML =
-        `<div style="padding:24px;color:#bf5a5a;font-family:var(--mono);font-size:11px;">
-          Could not load data file.<br><code style="font-size:10px">${DATA_PATH}</code><br><br>
-          Ensure the payload JSON is in the same folder as this HTML file and that you're serving it via a local server (not file://).
-        </div>`;
-      return;
+      const mResp = await fetch(MANIFEST_PATH);
+      if (mResp.ok) manifest = await mResp.json();
+    } catch(e) { /* no manifest, try direct payload */ }
+
+    if (manifest.length) {
+      window._MANIFEST = manifest;
+      // Load most recent date (manifest is sorted newest first)
+      const entry = manifest[0];
+      try {
+        const resp = await fetch('./' + entry.file);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        DATA = await resp.json();
+        ALL_PAYLOADS[DATA.date] = DATA;
+      } catch(e) {
+        showLoadError(entry.file); return;
+      }
+    } else {
+      // Fallback: try legacy single-file path
+      try {
+        const resp = await fetch('./20260512_ui_payload.json');
+        if (!resp.ok) throw new Error();
+        DATA = await resp.json();
+        ALL_PAYLOADS[DATA.date] = DATA;
+        manifest = [{ date: DATA.date, file: '20260512_ui_payload.json', total_articles: DATA.total_articles }];
+      } catch(e) {
+        showLoadError('available_dates.json or payload file'); return;
+      }
     }
   }
 
-  // Update header
+  // Build date selector if multiple dates
+  if (manifest.length > 1) {
+    const wrap = document.getElementById('date-selector-wrap');
+    const sel = document.getElementById('date-selector');
+    wrap.style.display = 'flex';
+    manifest.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.date;
+      opt.textContent = fmtDate(e.date);
+      sel.appendChild(opt);
+    });
+    sel.value = DATA.date;
+    sel.addEventListener('change', () => loadDate(sel.value));
+    window._MANIFEST = manifest;
+  }
+
   document.getElementById('header-date').textContent = fmtDate(DATA.date);
   document.getElementById('header-count').textContent = fmtNum(DATA.total_articles) + ' articles';
-
+  genreCountryIndex = buildGenreCountryIndex();
   initMap();
   initNetwork();
   renderWelcome();
+}
+
+function showLoadError(path) {
+  document.getElementById('detail-panel').innerHTML =
+    `<div style="padding:24px;color:#bf5a5a;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.7;">
+      Could not load data.<br><code>${path}</code><br><br>
+      Make sure you are serving via <code>python -m http.server 8000</code> and that your payload and manifest files are in the same folder as this HTML file.
+    </div>`;
 }
 
 boot();
