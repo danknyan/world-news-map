@@ -1,9 +1,13 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta http-equiv="refresh" content="0; url=global_news_lens.html" />
-  </head>
-  <body>
-    <a href="global_news_lens.html">Redirecting...</a>
-  </body>
+<html lang="en">
+<head><meta charset="UTF-8"></head>
+<body>
+<script>
+  if (window.innerWidth < 768) {
+    window.location.replace('./global_news_lens_m.html');
+  } else {
+    window.location.replace('./global_news_lens.html');
+  }
+</script>
+</body>
 </html>
