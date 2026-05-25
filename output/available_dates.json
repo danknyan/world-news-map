@@ -1,9 +1,27 @@
 [
   {
+    "date": "20260524",
+    "label": "24 May 2026",
+    "file": "20260524_ui_payload.json",
+    "total_articles": 8560
+  },
+  {
+    "date": "20260523",
+    "label": "23 May 2026",
+    "file": "20260523_ui_payload.json",
+    "total_articles": 9896
+  },
+  {
+    "date": "20260522",
+    "label": "22 May 2026",
+    "file": "20260522_ui_payload.json",
+    "total_articles": 16705
+  },
+  {
     "date": "20260518",
     "label": "18 May 2026",
     "file": "20260518_ui_payload.json",
-    "total_articles": 20164
+    "total_articles": 20051
   },
   {
     "date": "20260512",
